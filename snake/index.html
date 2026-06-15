@@ -3,13 +3,19 @@
 <head>
   <title>Snake</title>
   <style>
-    body { background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; color: #fff; }
+    body { background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: monospace; color: #fff; transition: background 0.2s, color 0.2s; }
+    body.light { background: #fdf6e3; color: #657b83; }
     canvas { border: 2px solid #333; }
+    body.light canvas { border-color: #93a1a1; }
     #score { margin-bottom: 10px; font-size: 20px; }
     #msg { margin-top: 10px; font-size: 14px; color: #888; }
+    body.light #msg { color: #93a1a1; }
+    #theme-btn { margin-bottom: 12px; padding: 4px 14px; cursor: pointer; font-family: monospace; font-size: 13px; background: #222; color: #ccc; border: 1px solid #444; border-radius: 4px; }
+    body.light #theme-btn { background: #eee8d5; color: #586e75; border-color: #93a1a1; }
   </style>
 </head>
 <body>
+  <button id="theme-btn" onclick="toggleTheme()">☀ Solarized Light</button>
   <div id="score">Score: 0</div>
   <canvas id="c" width="400" height="400"></canvas>
   <div id="msg">Arrow keys to move • Press any key to restart</div>
@@ -17,7 +23,21 @@
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
     const SIZE = 20, COLS = 20, ROWS = 20;
-    let snake, dir, food, score, interval, running;
+    let snake, dir, food, score, interval, running, light = false;
+
+    const THEMES = {
+      dark:  { bg: '#111', food: '#dc322f', head: '#859900', body: '#586e75', over: 'rgba(0,0,0,0.5)', overText: '#f55' },
+      light: { bg: '#fdf6e3', food: '#dc322f', head: '#859900', body: '#93a1a1', over: 'rgba(253,246,227,0.7)', overText: '#cb4b16' }
+    };
+
+    function theme() { return light ? THEMES.light : THEMES.dark; }
+
+    function toggleTheme() {
+      light = !light;
+      document.body.classList.toggle('light', light);
+      document.getElementById('theme-btn').textContent = light ? '🌙 Dark Mode' : '☀ Solarized Light';
+      draw();
+    }
 
     function start() {
       snake = [{x:10, y:10}];
@@ -25,9 +45,9 @@
       score = 0;
       running = true;
       placeFood();
-      update();
+      draw();
       clearInterval(interval);
-      interval = setInterval(tick, 120);
+      interval = setInterval(tick, 200);
     }
 
     function placeFood() {
@@ -42,9 +62,10 @@
         clearInterval(interval);
         running = false;
         draw();
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        const t = theme();
+        ctx.fillStyle = t.over;
         ctx.fillRect(0,0,400,400);
-        ctx.fillStyle = '#f55';
+        ctx.fillStyle = t.overText;
         ctx.font = '36px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', 200, 200);
@@ -62,19 +83,16 @@
     }
 
     function draw() {
-      ctx.fillStyle = '#111';
+      const t = theme();
+      ctx.fillStyle = t.bg;
       ctx.fillRect(0,0,400,400);
-      // food
-      ctx.fillStyle = '#f55';
+      ctx.fillStyle = t.food;
       ctx.fillRect(food.x*SIZE+1, food.y*SIZE+1, SIZE-2, SIZE-2);
-      // snake
       snake.forEach((s, i) => {
-        ctx.fillStyle = i===0 ? '#4f4' : '#2a2';
+        ctx.fillStyle = i===0 ? t.head : t.body;
         ctx.fillRect(s.x*SIZE+1, s.y*SIZE+1, SIZE-2, SIZE-2);
       });
     }
-
-    function update() { draw(); }
 
     document.addEventListener('keydown', e => {
       if (!running) { start(); return; }
